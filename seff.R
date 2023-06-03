@@ -1,20 +1,27 @@
+## Processing google forms with R
+## The form is available at
+## https://docs.google.com/spreadsheets/d/152N9dmaqIgiKZghmY6-D_3kSsONeeBp2Mmn9WIubdjc/edit?usp=sharing
+## and contains
+## 10 questions with General SelfEfficiacy Scale (psychological concept)
+## plus questionis about age and sex
+
 library("tidyverse")
 library("knitr")
 library("ggplot2")
+## library for reading googlesheets
 library("googlesheets4")
 
 ZeroHour <- as.POSIXct("2021-12-31 00:00:00", format = "%Y-%m-%d %H:%M:%S")
-qnames <- paste0("p", 1:10)
-qqnames <- c('x1', qnames, "plec", 'wiek' )
 
-## There is a form at
-## https://docs.google.com/spreadsheets/d/152N9dmaqIgiKZghmY6-D_3kSsONeeBp2Mmn9WIubdjc/edit?usp=sharing
-## 10 questions with General SelfEfficiacy Scale (psychological concept)
-## plus question about age and sex
-## read the data
+## names for columns
+## p1-p10 for GSE scale plus sex and age
+qnames <- paste0("p", 1:10)
+qqnames <- c('x1', qnames, "sex", 'age' )
+
+## read the data:
 ##s0 <- read_sheet('152N9dmaqIgiKZghmY6-D_3kSsONeeBp2Mmn9WIubdjc' )
 ##
-## or read and process 
+## or read and process at once:
 ##  change column names (col_names option)
 ##  filter-out responses older than ZeroHour
 ##  recode answers to numbers 1..4
@@ -37,21 +44,24 @@ Ntotal <- nrow(s1)
 
 ## Womens more self-efficient?
 ##
-s.sex <- s1 %>% group_by(plec) %>%
+s.sex <- s1 %>% group_by(sex) %>%
      summarise (se = mean(se, na.rm=T) )
 
 ## Younger persons are more self-efficient?
-
-model1 <- lm (data=s1, se ~ wiek)
+## linear regression between se and age
+model1 <- lm (data=s1, se ~ age)
 summary(model1)
 
 ## or compare mean values
-## but first recode age (wiek) into two categories
+## but first recode age into two categories
 ## young (< 40) and old
 
 ear.se.f <- s1 %>%
-  select (se, wiek) %>%
-  mutate( wiek=case_when(wiek >= 40 ~ "old",  TRUE ~ "young") ) %>%
-  group_by(wiek)%>%
+  select (se, age) %>%
+  mutate( age=case_when(age >= 40 ~ "old",  TRUE ~ "young") ) %>%
+  group_by(age)%>%
   summarize(mse = mean(se))
 
+
+
+## end
